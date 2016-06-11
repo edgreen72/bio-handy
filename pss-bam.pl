@@ -6,8 +6,8 @@ use vars qw( $opt_f $opt_b $opt_r $opt_F $opt_R );
 use strict;
 
 my ( $sam, $feature, $ref, $matches, $query, $i, $rcref, $rcquery );
-my ( @ref, @query, @rcref, @rcquery );
-my (@SUBS, @RCSUBS );
+my ( @ref, @query, @rref, @rquery );
+my (@SUBS, @RSUBS );
 my @BASES = ('A', 'C', 'G', 'T' );
 my %RC = ('A' => 'T', 'C' => 'G', 'G' => 'C', 'T' => 'A',
 	  'a' => 't', 'c' => 'g', 'g' => 'c', 't' => 'a',
@@ -32,12 +32,15 @@ foreach $feature ( $sam->features('match') ) {
 	}
 
 	### Now the other way
-	$rcref   = &revcom( $ref );
-	$rcquery = &revcom( $query );
-	@rcref = split( '', $rcref );
-	@rcquery = split( '', $rcquery );
+#	$rcref   = &revcom( $ref );
+#	$rcquery = &revcom( $query );
+	####    NOTE: NOT reverse complement. We want to see what's on the top strand
+	####          here, too - not the reverse complement of it, which would be
+	####          the bottom strand
+	@rref = reverse (split( '', $ref ));
+	@rquery = reverse (split( '', $query ));
 	for( $i = 0; $i < $opt_r; $i++ ) {
-	    $RCSUBS[$i]->{$rcref[$i]}->{$rcquery[$i]}++;
+	    $RSUBS[$i]->{$rref[$i]}->{$rquery[$i]}++;
 	}
     }
 }
@@ -46,7 +49,7 @@ foreach $feature ( $sam->features('match') ) {
 	 \@SUBS );
 
 &output( "\n\n### Reverse read substitution counts",
-	 \@RCSUBS );
+	 \@RSUBS );
 
 0;
 
