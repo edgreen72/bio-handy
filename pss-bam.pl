@@ -2,8 +2,10 @@
 
 use Bio::DB::Sam;
 use Getopt::Std;
-use vars qw( $opt_f $opt_b $opt_r $opt_F $opt_R );
+use vars qw( $opt_f $opt_b $opt_r $opt_F $opt_R $opt_l $opt_q );
 use strict;
+
+my $VERSION = 0.01;
 
 my ( $sam, $feature, $ref, $matches, $query, $i, $rcref, $rcquery );
 my ( @ref, @query, @rref, @rquery );
@@ -21,6 +23,14 @@ my $sam = Bio::DB::Sam->new( -bam   => $opt_b,
 foreach $feature ( $sam->features('match') ) {
     unless( $feature->unmapped ) {
 	($ref, $matches, $query) = $feature->padded_alignment();
+
+	### Apply length and map-quality filters
+	if ( (length( $query ) < $opt_l) ||
+	     ($feature->qual < $opt_q) ) {
+	    next;
+	}
+
+	### It's mapped and passes filters
 	if ( $feature->strand == -1 ) {
 	    $ref = &revcom( $ref );
 	    $query = &revcom( $query );
@@ -45,6 +55,7 @@ foreach $feature ( $sam->features('match') ) {
     }
 }
 
+print( "### pss-bam.pl v $VERSION $opt_f\n" );
 &output( '### Forward read substitution counts',
 	 \@SUBS );
 
@@ -94,15 +105,27 @@ sub revcom {
 
 sub init {
     my $r_DEF = 15;
-    getopts( 'f:b:r:' );
+    my $l_DEF = 0;
+    my $q_DEF = 0;
+    getopts( 'f:b:r:l:q:' );
     unless( -f $opt_f &&
 	    -f $opt_b ) {
-	print( "pss-bam.pl -f <fasta file> -b <bam file>\n" );
+	print( "pss-bam.pl v $VERSION -f <fasta file> -b <bam file>\n" );
 	print( "           -r <region length; default = $r_DEF\n" );
-	print( "Tests the Bio::DB::Sam module\n" );
+	print( "           -l <length filter>\n" );
+	print( "           -q <map quality filter>\n" );
+	print( "Uses the Bio::DB::Sam module to make map-damage like data\n" );
+	print( "suitable for plotting in gnuplot.\n" );
 	exit( 0 );
     }
     unless( defined( $opt_r ) ) {
 	$opt_r = $r_DEF;
+    }
+    unless( defined( $opt_l ) ) {
+	$opt_l = $l_DEF;
+    }
+
+    unless( defined( $opt_q ) ) {
+	$opt_q = $q_DEF;
     }
 }
