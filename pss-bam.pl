@@ -5,9 +5,9 @@ use Getopt::Std;
 use vars qw( $opt_f $opt_b $opt_r $opt_l $opt_L $opt_q $opt_F $opt_B $opt_m );
 use strict;
 
-my $VERSION = 0.02;
-
-my ( $sam, $feature, $ref, $matches, $query, $i, $rcref, $rcquery, $pair );
+my $VERSION = 0.03;
+my $DEBUG = 1;
+my ( $sam, $feature, $ref, $matches, $query, $i, $rcref, $rcquery, $pair, $length );
 my ( @ref, @query, @rref, @rquery );
 my (@SUBS, @RSUBS );
 my @BASES = ('A', 'C', 'G', 'T' );
@@ -21,24 +21,38 @@ my $sam = Bio::DB::Sam->new( -bam   => $opt_b,
 			     -fasta => $opt_f,
 			     -expand_flags => 1 );
 
-foreach $feature ( $sam->features('match') ) {
+#foreach $feature ( $sam->features('match') ) {
+my $iterator = $sam->features(-iterator=>1);
+while ( $feature = $iterator->next_seq ) {
     unless( $feature->unmapped ) {
 	($ref, $matches, $query) = $feature->padded_alignment();
-	
-	### Apply length and map-quality filters
-	if ( (length( $query ) < $opt_l) ||
-	     (length( $query ) > $opt_L) ||
-	     ($feature->qual < $opt_q) ||
-	     !&barcode_check($feature->get_tag_values('BC'))  ||
-	     (!$opt_m &&  !$feature->get_tag_values('MAP_PAIR')) ) {
+	if ( $opt_m ) {
+	    $length = length($query);
+	}
+	else {
+	    $length = abs($feature->isize); # size is reported as negative sometimes
+	}
+	### Apply filters
+	if ( ($length < $opt_l) || # too small
+	     ($length > $opt_L) || # too big
+	     ($feature->qual < $opt_q) || # too low map quality
+	     !&barcode_check($feature->get_tag_values('BC'))  || # wrong barcode
+	     (!$opt_m &&  !$feature->get_tag_values('PAIRED')) ) {
 	    next;
 	}
 	
 	### It's mapped and passes filters
-	### Now, we have to handle paired-end different than merged reads
-	if ( $feature->strand == -1 ) {
-	    $ref = &revcom( $ref );
-	    $query = &revcom( $query );
+
+	### If this is a single, merged sequence or if it's the forward (aka P5
+	### aka FIRST_MATE), then revcom if it's aligned to the minus strand
+	### so that we get the actual sequence as it was read against the
+	### minus strand genome sequence.
+	if ( $opt_m ||
+	     ($feature->get_tag_values('FIRST_MATE')) ) {
+	    if ( $feature->strand == -1 ) {
+		$ref   = &revcom( $ref );
+		$query = &revcom( $query );
+	    }
 	}
 	@ref   = split( '', $ref );
 	@query = split( '', $query );
@@ -51,22 +65,31 @@ foreach $feature ( $sam->features('match') ) {
 		$SUBS[$i]->{$ref[$i]}->{$query[$i]}++;
 	    }
 	}
-	elsif ( $feature->get_tag_values('SECOND_MATE') ) {
-	    for( $i = 0; $i < $opt_r; $i++ ) {
-		$RSUBS[$i]->{$ref[$i]}->{$query[$i]}++;
-	    }
-	}   
-	
-	### Now the other way
-#	$rcref   = &revcom( $ref );
-#	$rcquery = &revcom( $query );
-	####    NOTE: NOT reverse complement. We want to see what's on the top strand
-	####          here, too - not the reverse complement of it, which would be
-	####          the bottom strand
-	@rref = reverse (split( '', $ref ));
-	@rquery = reverse (split( '', $query ));
 
-	if ( $opt_m ) {
+	elsif ( $feature->get_tag_values('SECOND_MATE') ) {
+	    if ( $feature->get_tag_values('REVERSED') !=
+		 $feature->get_tag_values('M_REVERSED') ) { # Innie's only
+		if ( $feature->get_tag_values('REVERSED') ) {
+		    @rref = reverse (split( '', $ref ));
+		    @rquery = reverse (split( '', $query ));
+		    for( $i = 0; $i < $opt_r; $i++ ) {
+			$RSUBS[$i]->{$rref[$i]}->{$rquery[$i]}++;
+		    }
+		}
+		else {
+		    $ref   = &revcom( $ref );
+		    $query = &revcom( $query );
+		    @rref   = reverse split( '', $ref );
+		    @rquery = reverse split( '', $query );
+		    for( $i = 0; $i < $opt_r; $i++ ) {
+			$RSUBS[$i]->{$rref[$i]}->{$rquery[$i]}++;
+		    }
+		}
+	    }
+	}
+	elsif ( $opt_m ) {
+	    @rref = reverse (split( '', $ref ));
+	    @rquery = reverse (split( '', $query ));
 	    for( $i = 0; $i < $opt_r; $i++ ) {
 		$RSUBS[$i]->{$rref[$i]}->{$rquery[$i]}++;
 	    }
@@ -76,7 +99,9 @@ foreach $feature ( $sam->features('match') ) {
 
 
 
-print( "### pss-bam.pl v $VERSION $opt_f\n" );
+print( "### pss-bam.pl v $VERSION\n" );
+print( "### $opt_f\n" );
+print( "### $opt_b\n" );
 &output( '### Forward read substitution counts',
 	 \@SUBS );
 
