@@ -5,12 +5,19 @@ use Getopt::Std;
 use vars qw( $opt_f $opt_b $opt_r $opt_l $opt_L $opt_q $opt_F $opt_B $opt_m );
 use strict;
 
-my $VERSION = 0.03;
+my $VERSION = 0.05;
 my $DEBUG = 1;
+my $CONTEXT = 2;
 my ( $sam, $feature, $ref, $matches, $query, $i, $rcref, $rcquery, $pair, $length );
+my ( $ref_id, $ref_start, $ref_end, $up_dna, $down_dna, $tmp_dna );
 my ( @ref, @query, @rref, @rquery );
 my (@SUBS, @RSUBS );
 my @BASES = ('A', 'C', 'G', 'T' );
+my $up_context_p;  # ->[-CONTEXT] -> {'A' => counts, 'C' => counts, ...
+                   #   [-CONTEXT + 1] -> {'A' => counts, 'C' => counts, ...
+my $down_context_p;# ->[1] -> {'A' => counts, 'C' => counts, ...
+                   #   [2] -> {'A' => counts, 'C' => counts, ...
+                   #...[CONTEXT] -> {'A' => counts, 'C' => counts, ...
 my %RC = ('A' => 'T', 'C' => 'G', 'G' => 'C', 'T' => 'A',
 	  'a' => 't', 'c' => 'g', 'g' => 'c', 't' => 'a',
 	  'N' => 'N', 'n' => 'n', 'X' => 'x', '-' => '-');
@@ -42,6 +49,17 @@ while ( $feature = $iterator->next_seq ) {
 	}
 	
 	### It's mapped and passes filters
+	$ref_id    = $feature->seq_id;
+	$ref_start = $feature->start;
+	$ref_end   = $feature->end;
+	$up_dna   = uc($sam->seq($ref_id, ($ref_start - $CONTEXT), ($ref_start - 1)));
+	$down_dna = uc($sam->seq($ref_id, ($ref_end + 1), ($ref_end + $CONTEXT)));
+	unless( length($up_dna) == $CONTEXT ) {
+	    $up_dna = 'N' x $CONTEXT;
+	}
+	unless( length($down_dna) == $CONTEXT ) {
+	    $down_dna = 'N' x $CONTEXT;
+	}
 
 	### If this is a single, merged sequence or if it's the forward (aka P5
 	### aka FIRST_MATE), then revcom if it's aligned to the minus strand
@@ -52,6 +70,9 @@ while ( $feature = $iterator->next_seq ) {
 	    if ( $feature->strand == -1 ) {
 		$ref   = &revcom( $ref );
 		$query = &revcom( $query );
+		$tmp_dna  = $up_dna;
+		$up_dna   = &revcom( $down_dna );
+		$down_dna = &revcom( $up_dna );
 	    }
 	}
 	@ref   = split( '', $ref );
@@ -64,19 +85,32 @@ while ( $feature = $iterator->next_seq ) {
 	    for( $i = 0; $i < $opt_r; $i++ ) {
 		$SUBS[$i]->{$ref[$i]}->{$query[$i]}++;
 	    }
+	    &add_up_context( $up_dna );
 	}
 
 	elsif ( $feature->get_tag_values('SECOND_MATE') ) {
+
 	    if ( $feature->get_tag_values('REVERSED') !=
 		 $feature->get_tag_values('M_REVERSED') ) { # Innie's only
+
 		if ( $feature->get_tag_values('REVERSED') ) {
-		    @rref = reverse (split( '', $ref ));
+		    # P7 read is revcom in its alignment to the reference.
+		    # Keep it this way, since that is the strand of the P5
+		    # alignment. But, reverse it so we have the sequence
+		    # from the end of the read toward the interior.
+		    @rref   = reverse (split( '', $ref ));
 		    @rquery = reverse (split( '', $query ));
 		    for( $i = 0; $i < $opt_r; $i++ ) {
 			$RSUBS[$i]->{$rref[$i]}->{$rquery[$i]}++;
 		    }
+		    &add_down_context( $down_dna );
 		}
-		else {
+		else { # P7 read is NOT revcom in its alignment.
+		       # We want to be on the same strand as the P5
+		       # read, which must have been revcom. So, 
+		       # revcom, then reverse to get the 3' to 5'
+		       # (from end into interior) of the sequence
+		       # on the same strand as the P5 read
 		    $ref   = &revcom( $ref );
 		    $query = &revcom( $query );
 		    @rref   = reverse split( '', $ref );
@@ -84,6 +118,7 @@ while ( $feature = $iterator->next_seq ) {
 		    for( $i = 0; $i < $opt_r; $i++ ) {
 			$RSUBS[$i]->{$rref[$i]}->{$rquery[$i]}++;
 		    }
+		    &add_down_context( &revcom($up_dna) );
 		}
 	    }
 	}
@@ -92,6 +127,12 @@ while ( $feature = $iterator->next_seq ) {
 	    @rquery = reverse (split( '', $query ));
 	    for( $i = 0; $i < $opt_r; $i++ ) {
 		$RSUBS[$i]->{$rref[$i]}->{$rquery[$i]}++;
+	    }
+	    if ( $feature->strand == -1 ) {
+		&add_down_context( &revcom($up_dna) );
+	    }
+	    else {
+		&add_down_context( $down_dna );
 	    }
 	}
     }
@@ -102,13 +143,38 @@ while ( $feature = $iterator->next_seq ) {
 print( "### pss-bam.pl v $VERSION\n" );
 print( "### $opt_f\n" );
 print( "### $opt_b\n" );
-&output( '### Forward read substitution counts',
-	 \@SUBS );
+&output_beginning( '### Forward read substitution counts and base context',
+		   \@SUBS, $up_context_p );
 
-&output( "\n\n### Reverse read substitution counts",
-	 \@RSUBS );
+&output_end(       "\n\n### Reverse read substitution counts and base context",
+		   \@RSUBS, $down_context_p );
+		 
 
 0;
+
+# Takes a string of DNA sequence, $CONTEXT nt long
+# Increments bases in $up_context_p
+# keys of $up_context_p are negative numbers (upstream)
+sub add_up_context {
+    my $up_dna       = shift;
+    my $i;
+    my @up_dna = split( '', $up_dna );
+    for( $i = -$CONTEXT; $i < 0; $i++ ) {
+	$up_context_p->{ $i }->{ $up_dna[ $i + $CONTEXT ] }++;
+    }
+}
+
+# Takes a string of DNA sequence, $CONTEXT nt long
+# Increments bases in $down_context_p
+# keys of $down_context_p are positive numbers (downstream)
+sub add_down_context {
+    my $down_dna = shift;
+    my $i;
+    my @down_dna = split( '', $down_dna );
+    for( $i = 0; $i < $CONTEXT; $i++ ) {
+	$down_context_p->{$i+1}->{ $down_dna[ $i ] }++;
+    }
+}
 
 # Return true if barcode filter was set and this matches
 # Return true if no barcode filter was set
@@ -128,11 +194,21 @@ sub barcode_check {
     return 1;
 }
 
-sub output {
+sub output_beginning {
     my $header_string = shift;
-    my $s_p = shift;
+    my $s_p = shift; # substitions
+    my $c_p = shift; # base context
     my ( $i, $ref_base, $query_base, $count );
     print( "$header_string\n" );
+
+    for( $i = -$CONTEXT; $i < 0; $i++ ) {
+	printf( "%d %d 0 0 0 0 %d 0 0 0 0 %d 0 0 0 0 %d\n", 
+		$i, 
+		$c_p->{$i}->{'A'},
+		$c_p->{$i}->{'C'},
+		$c_p->{$i}->{'G'},
+		$c_p->{$i}->{'T'} );
+    }
 
     for( $i = 0; $i < $opt_r; $i++ ) {
 	print( "$i" );
@@ -144,20 +220,47 @@ sub output {
 		else {
 		    $count = 0;
 		}
-		printf(" $count");
+		printf(" %d", $count);
 	    }
 	}
 	print( "\n" );
     }
 }
 
-#foreach $target ($sam->seq_ids) {
-#    $segment = $sam->segment( -seq_id => $target );
-#    my $iterator = $segment->features( -iterator => 1 );
-#    while( my $align = $iterator->next_seq ) {
-#	print "yes";
-#    }
-#}
+sub output_end {
+    my $header_string = shift;
+    my $s_p = shift; # substitions
+    my $c_p = shift; # base context
+    my ( $i, $ref_base, $query_base, $count );
+    print( "$header_string\n" );
+
+#    for( $i = 0; $i < $opt_r; $i++ ) {
+    for( $i = $opt_r - 1; $i >= 0; $i-- ) {
+	print( "$i" );
+	foreach $ref_base (@BASES) {
+	    foreach $query_base (@BASES) {
+		if ( $s_p->[$i]->{$ref_base}->{$query_base} ) {
+		    $count = $s_p->[$i]->{$ref_base}->{$query_base};
+		}
+		else {
+		    $count = 0;
+		}
+		printf(" %d", $count);
+	    }
+	}
+	print( "\n" );
+    }
+    for( $i = 1; $i <= $CONTEXT; $i++ ) {
+	printf( "%d %d 0 0 0 0 %d 0 0 0 0 %d 0 0 0 0 %d\n", 
+		$i, 
+		$c_p->{$i}->{'A'},
+		$c_p->{$i}->{'C'},
+		$c_p->{$i}->{'G'},
+		$c_p->{$i}->{'T'} );
+    }
+
+
+}
 
 sub revcom {
     my $seq = shift;
