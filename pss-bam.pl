@@ -5,7 +5,7 @@ use Getopt::Std;
 use vars qw( $opt_f $opt_b $opt_r $opt_l $opt_L $opt_q $opt_F $opt_B $opt_m );
 use strict;
 
-my $VERSION = 0.05;
+my $VERSION = 0.06;
 my $DEBUG = 1;
 my $CONTEXT = 2;
 my ( $sam, $feature, $ref, $matches, $query, $i, $rcref, $rcquery, $pair, $length );
@@ -86,6 +86,20 @@ while ( $feature = $iterator->next_seq ) {
 		$SUBS[$i]->{$ref[$i]}->{$query[$i]}++;
 	    }
 	    &add_up_context( $up_dna );
+	    if ( $opt_m ) { ### If merged reads, now do the end of the read
+		            ### i.e., the down_context
+		@rref = reverse (split( '', $ref ));
+		@rquery = reverse (split( '', $query ));
+		for( $i = 0; $i < $opt_r; $i++ ) {
+		    $RSUBS[$i]->{$rref[$i]}->{$rquery[$i]}++;
+		}
+		if ( $feature->strand == -1 ) {
+		    &add_down_context( &revcom($up_dna) );
+		}
+		else {
+		    &add_down_context( $down_dna );
+		}
+	    }
 	}
 
 	elsif ( $feature->get_tag_values('SECOND_MATE') ) {
@@ -120,19 +134,6 @@ while ( $feature = $iterator->next_seq ) {
 		    }
 		    &add_down_context( &revcom($up_dna) );
 		}
-	    }
-	}
-	elsif ( $opt_m ) {
-	    @rref = reverse (split( '', $ref ));
-	    @rquery = reverse (split( '', $query ));
-	    for( $i = 0; $i < $opt_r; $i++ ) {
-		$RSUBS[$i]->{$rref[$i]}->{$rquery[$i]}++;
-	    }
-	    if ( $feature->strand == -1 ) {
-		&add_down_context( &revcom($up_dna) );
-	    }
-	    else {
-		&add_down_context( $down_dna );
 	    }
 	}
     }
