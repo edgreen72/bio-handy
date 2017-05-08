@@ -123,7 +123,10 @@ sub init {
     unless( $opt_m ) {
         $opt_m = $m_DEF;
     }
-    my $bio_io = Bio::SeqIO->new( '-file' => $opt_f, '-format' => 'fasta' );
+    my $bio_io = Bio::SeqIO->new( '-file' => $opt_f, 
+				  '-format' => 'fasta',
+				  '-alphabet' => 'dna' );
+
     @starts = split( ':', $opt_s );
     @terms  = split( ':', $opt_t );
 
@@ -147,7 +150,8 @@ sub make_output {
                     $translation = $seq_o->trunc($orf_p->[0]+1, $orf_p->[1]+3)->
                         translate()->seq;
                     printf( "%s\t%s\t%d\t%d\t%d\t%s\n",
-                            $id, $strand, $frame, $orf_p->[0]+1, $orf_p->[1]+3, $translation );
+                            $id, $strand, $frame, 
+			    $orf_p->[0]+1, $orf_p->[1]+3, $translation );
                     for ( $i = $orf_p->[0]; $i <= $orf_p->[1]; $i++ ) {
                         $in_orf[$i] = 1;
                     }
