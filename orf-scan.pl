@@ -4,31 +4,32 @@
 ### Author: Ed Green
 ###         Dept. of Biomolecular Engineering
 ###         UC Santa Cruz
+### This program scans a fasta file for open-reading frames (ORFs).
+### It reports the presence of ORFs in all 6 frames.
 
 use Bio::SeqIO;
 use Getopt::Std;
-use vars qw( $opt_f $opt_s $opt_t $opt_m );                                                                                   
+use vars qw( $opt_f $opt_s $opt_t $opt_m );
 my $VERSION = 1.0;
 
 ### Process command-line arguments, set up Bio::SeqIO object
 ### start and stop codons
-my ($bio_io, $starts_p, $terms_p) = &init();                                                                                  
-
-my ( $seq_o, $next_start, $next_term );                                                                                       
-my ( @starts, @terms );                                                                                                       
-my ( %orfs );                                                                                                                 
+my ($bio_io, $starts_p, $terms_p) = &init();
+my ( $seq_o, $next_start, $next_term );
+my ( @starts, @terms );
+my ( %orfs );
 
 
 ### Go through each input sequence in the input fasta database
 while( $seq_o = $bio_io->next_seq() ) {
     
     ### For each reading frame 0, 1, & 2
-    for($i = 0; $i<= 2; $i++ ) {                                                                                              
+    for($i = 0; $i<= 2; $i++ ) {
 
 	### Find 0-index positions of all start and stop codons
 	### in this sequence, in this frame, and return sorted list
-        @starts = &find_codons( $seq_o, $i, $starts_p );                                                                      
-        @terms  = &find_codons( $seq_o, $i, $terms_p );                                                                       
+        @starts = &find_codons( $seq_o, $i, $starts_p );
+        @terms  = &find_codons( $seq_o, $i, $terms_p );
 
 	### Initialize next_start and next_term
         $next_start = shift( @starts );
@@ -122,7 +123,10 @@ sub init {
     unless( $opt_m ) {
         $opt_m = $m_DEF;
     }
-    my $bio_io = Bio::SeqIO->new( '-file' => $opt_f, '-format' => 'fasta' );
+    my $bio_io = Bio::SeqIO->new( '-file' => $opt_f, 
+				  '-format' => 'fasta',
+				  '-alphabet' => 'dna' );
+
     @starts = split( ':', $opt_s );
     @terms  = split( ':', $opt_t );
 
@@ -146,7 +150,8 @@ sub make_output {
                     $translation = $seq_o->trunc($orf_p->[0]+1, $orf_p->[1]+3)->
                         translate()->seq;
                     printf( "%s\t%s\t%d\t%d\t%d\t%s\n",
-                            $id, $strand, $frame, $orf_p->[0]+1, $orf_p->[1]+3, $translation );
+                            $id, $strand, $frame, 
+			    $orf_p->[0]+1, $orf_p->[1]+3, $translation );
                     for ( $i = $orf_p->[0]; $i <= $orf_p->[1]; $i++ ) {
                         $in_orf[$i] = 1;
                     }
