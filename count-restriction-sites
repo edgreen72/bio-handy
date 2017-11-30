@@ -1,5 +1,9 @@
 #!/usr/bin/env ruby
 
+# by Edward S. Rice (esrice@soe.ucsc.edu), November 29, 2017
+
+# to install this gem, use "gem install bio". If that doesn't work, add a
+# "--user-install" argument
 require 'bio'
 
 BANNER = <<EOF
