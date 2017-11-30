@@ -1,0 +1,49 @@
+#!/usr/bin/env ruby
+
+# by Edward S. Rice (esrice@soe.ucsc.edu), November 29, 2017
+
+# to install this gem, use "gem install bio". If that doesn't work, add a
+# "--user-install" argument
+require 'bio'
+
+BANNER = <<EOF
+count-restriction-sites: given an assembly and a restriction site sequence,
+                         count the number of occurences of that sequence in
+                         each scaffold/contig of the assembly and output a
+                         histogram table where the first column is a number of
+                         restriction site occurences and the second column is
+                         the number of contigs/scaffolds in the assembly
+                         containing that many occurences of the restriction site
+
+USAGE: count-restriction-sites <contigs.fa> <restriction sequence>
+EOF
+
+# check for correct number of arguments
+abort BANNER unless ARGV.size == 2 # check for correct number of arguments
+
+# check to make sure the fasta file is readable
+fasta_filename = ARGV[0]
+abort "#{fasta_filename} not readable" unless File.readable?(fasta_filename)
+
+# check to make sure the restriction site sequence is a palindrome
+restriction_sequence = Bio::Sequence::NA.new(ARGV[1])
+if restriction_sequence.complement != restriction_sequence
+    abort "#{restriction_sequence} not a palindrome"
+end
+
+# make a regex from the restriction sequence
+restriction_re = restriction_sequence.to_re
+
+# occurences is an array containing one element for each sequence in the input
+# file. That element is the number of occurences of the restriction site in that
+# sequence
+occurences = []
+Bio::FastaFormat.open(fasta_filename).each do |entry|
+    occurences << entry.naseq.scan(restriction_re).count
+end
+
+# output histogram
+histogram = occurences.inject(Hash.new(0)) { |hash, key| hash[key] += 1; hash }
+histogram.keys.sort.each do |key|
+    puts "#{key}\t#{histogram[key]}"
+end
