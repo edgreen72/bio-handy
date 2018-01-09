@@ -7,8 +7,9 @@ use vars qw( $opt_f $opt_w );
 
 my $bio_in = &init();
 my ( $seq_o, $pos, $id, $len, $window_seq, $gc, $at, $window_seq );
-
+my ( $num_windows );
 while( $seq_o = $bio_in->next_seq() ) {
+    $num_windows = 0;
     $pos = 1;
     $id  = $seq_o->display_id();
     $len = $seq_o->length();
@@ -17,14 +18,18 @@ while( $seq_o = $bio_in->next_seq() ) {
 	$gc = $window_seq =~ tr/GCgc//;
 	$at = $window_seq =~ tr/ATat//;
 	if ( ($gc + $at) > 0 ) {
-	    printf( "%s %d %d\n", 
+	    printf( "%s %d %.2f\n", 
 		    $id, 
 		    $pos, 
-		    int($gc/($gc+$at) * 100) );
+		    $gc/($gc+$at) * 100 );
+	    $num_windows++;
 	}
 	$pos += $opt_w;
+
     }
-    print( "\n\n" );
+    if ( $num_windows > 0 ) {
+	print( "\n\n" );
+    }
 }
 
 sub init {
