@@ -40,7 +40,7 @@ sub init {
 	printf( "Makes a table of:\n" );
 	printf( "1. Sequence ID\n" );
 	printf( "2. Window start position\n" );
-	printf( "3. %GC in window\n" );
+	printf( "3. \%GC in window\n" );
 	exit( 0 );
     }
     unless( defined( $opt_w ) ) {

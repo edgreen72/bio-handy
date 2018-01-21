@@ -25,8 +25,14 @@ sub init {
     getopts( 'a:c:I:' );
     unless( -f $opt_a ) {
 	print( "align2consensus.pl\n" );
+	print( "Takes as input a multiple-sequence alignment file in clustalw\n" );
+	print( "format. Generates a single, fasta consensus sequence by\n" );
+	print( "calling the most common base at each postion. Where there\n" );
+	print( "is no consensus over the user-defined percent identity, the\n" );
+	print( "output sequence contains an N.\n" );
+	print( "Requires Bio::AlignIO and Bio::SeqIO from bioperl\n" );
 	print( "  -a <alignment file; clustalw format>\n" );
-	print( "  -c <percent ID for consensus call; default $c_DEF>\n ");
+	print( "  -c <percent ID for consensus call; default $c_DEF>\n");
 	print( "  -I <Identifier to use; default $I_DEF>\n" );
 	exit( 0 );
     }

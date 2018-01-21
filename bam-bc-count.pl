@@ -46,7 +46,8 @@ sub init {
 	print( "bam-bc-count.pl -b <bam file> -5 <P5 barcode> -7 <P7 barcodes>\n" );
 	print( "                -q <map quality cutoff>\n" );
 	print( "Reports a count of the observed number of each barcode combination\n" );
-	print( "in the input bam file.\n" );
+	print( "in the input bam file. Barcodes are read from the BC field.\n" );
+	print( "Requires BIo::DB::Sam\n" );
 	exit( 0 );
     }
 }
