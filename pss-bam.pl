@@ -2,14 +2,14 @@
 
 use Bio::DB::Sam;
 use Getopt::Std;
-use vars qw( $opt_f $opt_b $opt_r $opt_l $opt_L $opt_q $opt_F $opt_B $opt_m );
+use vars qw( $opt_f $opt_b $opt_r $opt_l $opt_L $opt_q $opt_F $opt_B $opt_m $opt_U $opt_D );
 use strict;
 
-my $VERSION = 0.06;
+my $VERSION = 0.061;
 my $DEBUG = 1;
 my $CONTEXT = 2;
 my ( $sam, $feature, $ref, $matches, $query, $i, $rcref, $rcquery, $pair, $length );
-my ( $ref_id, $ref_start, $ref_end, $up_dna, $down_dna, $tmp_dna );
+my ( $ref_id, $ref_start, $ref_end, $up_dna, $down_dna, $tmp_dna, $up_co_p, $do_co_p );
 my ( @ref, @query, @rref, @rquery );
 my (@SUBS, @RSUBS );
 my @BASES = ('A', 'C', 'G', 'T' );
@@ -22,7 +22,7 @@ my %RC = ('A' => 'T', 'C' => 'G', 'G' => 'C', 'T' => 'A',
 	  'a' => 't', 'c' => 'g', 'g' => 'c', 't' => 'a',
 	  'N' => 'N', 'n' => 'n', 'X' => 'x', '-' => '-');
 	  
-&init();
+($up_co_p, $do_co_p) = &init();
 
 my $sam = Bio::DB::Sam->new( -bam   => $opt_b,
 			     -fasta => $opt_f,
@@ -48,7 +48,7 @@ while ( $feature = $iterator->next_seq ) {
 	    next;
 	}
 	
-	### It's mapped and passes filters
+	### It's mapped and passes some filters
 	$ref_id    = $feature->seq_id;
 	$ref_start = $feature->start;
 	$ref_end   = $feature->end;
@@ -72,12 +72,18 @@ while ( $feature = $iterator->next_seq ) {
 		$query = &revcom( $query );
 		$tmp_dna  = $up_dna;
 		$up_dna   = &revcom( $down_dna );
-		$down_dna = &revcom( $up_dna );
+		$down_dna = &revcom( $tmp_dna ); ### BUG? should be ( $tmp_dna )? yes, fixed
 	    }
 	}
 	@ref   = split( '', $ref );
 	@query = split( '', $query );
 
+	### Now, we know the genomic sequence context and can apply that
+	### filter if necessary
+	unless( &context_filter( $up_co_p, $do_co_p, $up_dna, $down_dna ) ) {
+	    next;
+	}
+	
 	### If we have merged reads or if we're looking at the first mate (P5)
 	### end
 	if ( $opt_m ||
@@ -93,12 +99,13 @@ while ( $feature = $iterator->next_seq ) {
 		for( $i = 0; $i < $opt_r; $i++ ) {
 		    $RSUBS[$i]->{$rref[$i]}->{$rquery[$i]}++;
 		}
-		if ( $feature->strand == -1 ) {
-		    &add_down_context( &revcom($up_dna) );
-		}
-		else {
-		    &add_down_context( $down_dna );
-		}
+		# NO! Already revcommed and switched up to down
+#		if ( $feature->strand == -1 ) {
+#		    &add_down_context( &revcom($up_dna) );
+#		}
+#		else {
+		&add_down_context( $down_dna );
+#		}
 	    }
 	}
 
@@ -153,6 +160,22 @@ print( "### $opt_b\n" );
 
 0;
 
+sub context_filter {
+    my $up_c_p   = shift; # pointer to good upstream contexts
+    my $do_c_p   = shift; # pointer to valid downstream contexts
+    my $up_dna   = shift;
+    my $down_dna = shift;
+    my ( @up_dna, @down_dna );
+    @up_dna   = split( '', $up_dna );
+    @down_dna = split( '', $down_dna );
+
+    if ( $up_c_p->{$up_dna[  $CONTEXT-1 ]} &&
+	 $do_c_p->{$down_dna[0]} ) {
+	return 1;
+    }
+    return 0;
+}
+    
 # Takes a string of DNA sequence, $CONTEXT nt long
 # Increments bases in $up_context_p
 # keys of $up_context_p are negative numbers (upstream)
@@ -276,7 +299,10 @@ sub init {
     my $l_DEF = 0;
     my $L_DEF = 250000000;
     my $q_DEF = 0;
-    getopts( 'f:b:r:l:L:q:F:B:m' );
+
+    my ( %up_context, %down_context );
+    my $B;
+    getopts( 'f:b:r:l:L:q:F:B:U:D:m' );
     unless( -f $opt_f &&
 	    -f $opt_b ) {
 	print( "pss-bam.pl v $VERSION -f <fasta file> -b <bam file>\n" );
@@ -286,6 +312,8 @@ sub init {
 	print( "           -q <map quality filter>\n" );
 	print( "           -F <front barcode sequence>\n" );
 	print( "           -B <back barcode sequence>\n" );
+	print( "           -U <upstream context base filter; Base must be one of these>\n" );
+	print( "           -D <upstream context base filter; Base must be one of these>\n" );
 	print( "           -m <run in merged mode => reads are merged>\n" );
 	print( "Uses the Bio::DB::Sam module to make map-damage like data\n" );
 	print( "suitable for plotting in gnuplot.\n" );
@@ -306,4 +334,27 @@ sub init {
     unless( defined( $opt_m ) ) {
 	$opt_m = 0;
     }
+    if ( defined( $opt_U ) ) {
+	foreach $B (split( '', $opt_U )) {
+	    $up_context{ $B } = 1;
+	}
+    }
+    else {
+	foreach $B (@BASES) {
+	    $up_context{$B} = 1;
+	}
+	$up_context{'N'} = 1;
+    }
+    if ( defined( $opt_D ) ) {
+	foreach $B (split( '', $opt_D )) {
+	    $down_context{ $B } = 1;
+	}
+    }
+    else {
+	foreach $B (@BASES) {
+	    $down_context{$B} = 1;
+	}
+	$down_context{'N'} = 1;
+    }
+    return ( \%up_context, \%down_context );
 }
