@@ -6,9 +6,6 @@
 #include "fastq-io.h"
 
 #define DEBUG (0)
-#define MAX_LINE_LEN (200000)
-#define MAX_FN_LEN (2048)
-#define MAX_ID_LEN (256)
 #define L_DEF (167)
 
 typedef struct dinucs {
@@ -23,7 +20,7 @@ typedef struct dinuc_array {
 typedef struct dinuc_array* DiNucArray;
 
 DiNucArray init_DiNucArray( const int length );
-void update_DNA( DiNucArray DNA, FQ* fq_seq_p );
+void update_DNA( DiNucArray DNA, const FQ* fq_seq_p );
 size_t get_dinuc_inx( const char* dinuc );
 void write_DNA( const DiNucArray DNA );
 
@@ -50,7 +47,7 @@ int main ( int argc, char* argv[] ) {
   gzFile fqgz;
   int length = L_DEF;
   DiNucArray DNA;
-  FQ_Srq* fq_source;
+  FQ_Src* fq_source;
   FQ fq_seq;
   int ich;
   
@@ -70,9 +67,13 @@ int main ( int argc, char* argv[] ) {
   DNA = init_DiNucArray( length );
   fq_source = init_fastq_src( fq_fn );
 
-  while( get_next_fq( fq_source, &FQ ) == 0 ) {
-    if ( FQ.len == length ) {
-      update_DNA( DNA, &FQ );
+  if ( fq_source == NULL ) {
+    help();
+  }
+  
+  while( get_next_fq( fq_source, &fq_seq ) == 0 ) {
+    if ( fq_seq.len == length ) {
+      update_DNA( DNA, &fq_seq );
     }
   }
   
@@ -85,27 +86,6 @@ void update_DNA( DiNucArray DNA, const FQ* fq_seq_p ) {
   size_t inx = 0;
   char b;
   
-  while( i <= fq_seq_p->len - 2 ) {
-    b = toupper( fq_seq->seq[i] );
-    inx = inx << 2;
-    switch(b) {
-    case 'A' :
-      break;
-    case 'C' :
-      inx += 1;
-      break;
-    case 'G' :
-      inx += 2;
-      break;
-    case 'T' :
-      inx += 3;
-      break;
-    default : // not a good base
-      inx = 16;
-      
-    }
-
-    
   for( i = 0; i < (fq_seq_p->len - 2); i++ ) {
     inx = get_dinuc_inx( &(fq_seq_p->seq[i]) );
     DNA->dnps[i]->dinuc_counts[inx]++;
@@ -117,10 +97,11 @@ DiNucArray init_DiNucArray( const int length ) {
   size_t i, inx;
 
   DNA = (DiNucArray)malloc(sizeof(Dinuc_array));
-  DNA->dnps = (DNP*)malloc(sizeof(Dinucs) * length);
+  DNA->dnps = (DNP*)malloc(sizeof(DNP) * length);
   DNA->len = length;
   
   for( i = 0; i < length; i++ ) {
+    DNA->dnps[i] = (DNP)malloc(sizeof(Dinucs));
     for( inx = 0; inx < 17; inx++ ) {
       DNA->dnps[i]->dinuc_counts[inx] = 0;
     }
@@ -130,12 +111,12 @@ DiNucArray init_DiNucArray( const int length ) {
 
 void write_DNA( const DiNucArray DNA ) {
   size_t i, inx;
-  for( i = 0; i < DNA->len; i++ ) {
+  for( i = 0; i < (DNA->len - 2); i++ ) {
     printf( "%lu ", i );
     for( inx = 0; inx < 16; inx++ ) {
-      printf( "%lu ", DNA->dnps[i]->dinuc_counts[inx] );
+      printf( "%u ", DNA->dnps[i]->dinuc_counts[inx] );
     }
-    printf( "%lu\n", DNA->dnps[i]->dinuc_counts[inx] );
+    printf( "%u\n", DNA->dnps[i]->dinuc_counts[inx] );
   }
 }
 
@@ -158,7 +139,10 @@ size_t get_dinuc_inx( const char* dinuc ) {
   case 'T' :
     inx += 12;
     break;
+  default :
+    return 16;
   }
+
   switch(b2) {
   case 'A' :
     inx += 0;
@@ -172,6 +156,8 @@ size_t get_dinuc_inx( const char* dinuc ) {
   case 'T' :
     inx += 3;
     break;
+  default :
+    return 16;
   }
   return inx;  
 }

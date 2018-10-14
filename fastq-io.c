@@ -37,10 +37,18 @@ FQ_Src* init_fastq_src( const char fn[] ) {
   if ( is_gz( fn ) ) {
     fq_source->is_gz = 1;
     fq_source->fqgz = gzopen( fq_source->fn, "r" );
+    if ( fq_source->fqgz == NULL ) {
+      free( fq_source );
+      return NULL;
+    }
   }
   else {
     fq_source->is_gz = 0;
     fq_source->fqfp = fileOpen( fq_source->fn, "r" );
+    if ( fq_source->fqfp == NULL ) {
+      free( fq_source );
+      return NULL;
+    }
   }
   return fq_source;
 }
