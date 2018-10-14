@@ -86,7 +86,7 @@ void update_DNA( DiNucArray DNA, const FQ* fq_seq_p ) {
   size_t inx = 0;
   char b;
   
-  for( i = 0; i < (fq_seq_p->len - 2); i++ ) {
+  for( i = 0; i < (fq_seq_p->len - 1); i++ ) {
     inx = get_dinuc_inx( &(fq_seq_p->seq[i]) );
     DNA->dnps[i]->dinuc_counts[inx]++;
   }
@@ -111,7 +111,7 @@ DiNucArray init_DiNucArray( const int length ) {
 
 void write_DNA( const DiNucArray DNA ) {
   size_t i, inx;
-  for( i = 0; i < (DNA->len - 2); i++ ) {
+  for( i = 0; i < (DNA->len - 1); i++ ) {
     printf( "%lu ", i );
     for( inx = 0; inx < 16; inx++ ) {
       printf( "%u ", DNA->dnps[i]->dinuc_counts[inx] );
