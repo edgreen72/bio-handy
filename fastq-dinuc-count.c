@@ -22,7 +22,7 @@ typedef struct dinuc_array* DiNucArray;
 DiNucArray init_DiNucArray( const int length );
 void update_DNA( DiNucArray DNA, const FQ* fq_seq_p );
 size_t get_dinuc_inx( const char* dinuc );
-void write_DNA( const DiNucArray DNA );
+void write_DNA( const DiNucArray DNA, const int length );
 
 
 void help( void ) {
@@ -77,7 +77,7 @@ int main ( int argc, char* argv[] ) {
     }
   }
   
-  write_DNA( DNA );
+  write_DNA( DNA, length );
   exit( 0 );
 }
 
@@ -109,8 +109,10 @@ DiNucArray init_DiNucArray( const int length ) {
   return DNA;
 }
 
-void write_DNA( const DiNucArray DNA ) {
+void write_DNA( const DiNucArray DNA, const int length ) {
   size_t i, inx;
+  printf( "#Dinucleotides counts at each position on reads of length %d\n", length );
+  printf( "#POS AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT NN\n" );
   for( i = 0; i < (DNA->len - 1); i++ ) {
     printf( "%lu ", i );
     for( inx = 0; inx < 16; inx++ ) {
