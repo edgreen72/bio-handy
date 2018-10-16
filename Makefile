@@ -1,6 +1,7 @@
 CC=gcc
-#CFLAGS=-gdwarf-2 -g
 CFLAGS=-O2
+#CFLAGS=-gdwarf-2 -g
+
 
 fastq-io.o : fastq-io.h fastq-io.c
 	echo "Making fastq-io.o ..."

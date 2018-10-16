@@ -4,7 +4,7 @@
 #include <string.h>
 #include <limits.h>
 #include <zlib.h>
-#define MAX_FN_LEN (1027)
+#define MAX_FN_LEN (2047)
 #define MAX_ID_LEN (511)
 #define MAX_FQ_LEN (2047)
 
@@ -40,6 +40,7 @@ int get_next_fq( FQ_Src* fq_source, FQ* fq_seq );
 int get_next_fqpair( FQPair_Src* fq_pair_source,
 		     FQPair* fq_seq_pair );
 FQ_Src* init_fastq_src( const char fn[] );
+FQ_Src* reset_fastq_src( const char fn[], FQ_Src* fq_source );
 int read_fastq( FILE* fp, FQ* fq_seq );
 int gzread_fastq( gzFile gzfp, FQ* fq_seq );
 FILE* fileOpen(const char* name, char access_mode[]);

@@ -31,10 +31,44 @@ int get_next_fqpair( FQPair_Src* fq_pair_source, FQPair* fq_seq_pair ) {
 
 FQ_Src* init_fastq_src( const char fn[] ) {
   FQ_Src* fq_source;
+  if ( fn == NULL ) {
+    return NULL;
+  }
   fq_source = (FQ_Src*)malloc(sizeof( FQ_Src ));
   strcpy( fq_source->fn, fn );
   fq_source->n = 0;
   if ( is_gz( fn ) ) {
+    fq_source->is_gz = 1;
+    fq_source->fqgz = gzopen( fq_source->fn, "r" );
+    if ( fq_source->fqgz == NULL ) {
+      free( fq_source );
+      return NULL;
+    }
+  }
+  else {
+    fq_source->is_gz = 0;
+    fq_source->fqfp = fileOpen( fq_source->fn, "r" );
+    if ( fq_source->fqfp == NULL ) {
+      free( fq_source );
+      return NULL;
+    }
+  }
+  return fq_source;
+}
+
+/* reset_fastq_src
+   Takes an already initialized FQ_Src* and a filename
+   with fastq data.
+   Resets the FQ_Src to use this new data source, creating new
+   filepointers and reseting the n variable.
+   Returns a pointer to this new source */
+FQ_Src* reset_fastq_src( const char fn[], FQ_Src* fq_source ) {
+  if ( fn == NULL ) {
+    return NULL;
+  }
+  strcpy( fq_source->fn, fn );
+  fq_source->n = 0;
+    if ( is_gz( fn ) ) {
     fq_source->is_gz = 1;
     fq_source->fqgz = gzopen( fq_source->fn, "r" );
     if ( fq_source->fqgz == NULL ) {

@@ -42,7 +42,9 @@ void help( void ) {
 
 int main ( int argc, char* argv[] ) {
   extern char* optarg;
-  char fq_fn[MAX_FN_LEN+1] = {'\0'};
+  char fq_in[MAX_FN_LEN+1] = {'\0'};
+  //  char fq_fn[MAX_FN_LEN+1] = {'\0'};
+  char* fq_fn;
   FILE* fq;
   gzFile fqgz;
   int length = L_DEF;
@@ -50,11 +52,12 @@ int main ( int argc, char* argv[] ) {
   FQ_Src* fq_source;
   FQ fq_seq;
   int ich;
+  char delimiter = ':';
   
   while( (ich=getopt( argc, argv, "f:l:" )) != -1 ) {
     switch(ich) {
     case 'f' :
-      strcpy( fq_fn, optarg );
+      strcpy( fq_in, optarg );
       break;
     case 'l' :
       length = atoi( optarg );
@@ -65,18 +68,20 @@ int main ( int argc, char* argv[] ) {
   }
 
   DNA = init_DiNucArray( length );
+  fq_fn = strtok( fq_in, &delimiter );
   fq_source = init_fastq_src( fq_fn );
-
   if ( fq_source == NULL ) {
     help();
   }
-  
-  while( get_next_fq( fq_source, &fq_seq ) == 0 ) {
-    if ( fq_seq.len == length ) {
-      update_DNA( DNA, &fq_seq );
+  while( fq_source != NULL ) {
+    while( get_next_fq( fq_source, &fq_seq ) == 0 ) {
+      if ( fq_seq.len == length ) {
+	update_DNA( DNA, &fq_seq );
+      }
     }
+    fq_fn = strtok( NULL, &delimiter );
+    fq_source = reset_fastq_src( fq_fn, fq_source );
   }
-  
   write_DNA( DNA, length );
   exit( 0 );
 }
