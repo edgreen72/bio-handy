@@ -104,7 +104,7 @@ DiNucArray init_DiNucArray( const int length ) {
   DNA = (DiNucArray)malloc(sizeof(Dinuc_array));
   DNA->dnps = (DNP*)malloc(sizeof(DNP) * length);
   DNA->len = length;
-  
+
   for( i = 0; i < length; i++ ) {
     DNA->dnps[i] = (DNP)malloc(sizeof(Dinucs));
     for( inx = 0; inx < 17; inx++ ) {
@@ -116,6 +116,16 @@ DiNucArray init_DiNucArray( const int length ) {
 
 void write_DNA( const DiNucArray DNA, const int length ) {
   size_t i, inx;
+  unsigned int totals[17] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			      0, 0, 0, 0, 0, 0, 0 };
+
+  /* Find the total counts over all positions for each dinucleotide */
+  for( i = 0; i < (DNA->len - 1); i++ ) {
+    for( inx = 0; inx < 16; inx++ ) {
+      totals[inx] += DNA->dnps[i]->dinuc_counts[inx];
+    }
+  }
+
   printf( "#Dinucleotides counts at each position on reads of length %d\n", length );
   printf( "#POS AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT NN\n" );
   for( i = 0; i < (DNA->len - 1); i++ ) {
@@ -125,7 +135,30 @@ void write_DNA( const DiNucArray DNA, const int length ) {
     }
     printf( "%u\n", DNA->dnps[i]->dinuc_counts[inx] );
   }
+  
+  printf( "\n\n" );
+  printf( "# Dinucleotides enrichment/depletion from average\n" );
+  for( i = 0; i < (DNA->len - 1); i++ ) {
+    printf( "%lu ", i );
+    for( inx = 0; inx < 16; inx++ ) {
+      if ( totals[inx] == 0 ) {
+	printf( "0 " );
+      }
+      else {
+	printf( "%.3f ", (float)((float)DNA->dnps[i]->dinuc_counts[inx] /
+				 ((float)totals[inx] / ((float)length - 1.0))) );
+      }
+    }
+    if ( totals[inx] == 0 ) {
+      printf( "0\n" );
+    }
+    else {
+      printf( "%.3f\n", (float)((float)DNA->dnps[i]->dinuc_counts[inx] /
+				((float)totals[inx] / ((float)length - 1.0))) );
+    }
+  }
 }
+
 
 size_t get_dinuc_inx( const char* dinuc ) {
   char b1, b2;
