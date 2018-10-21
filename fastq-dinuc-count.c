@@ -264,16 +264,16 @@ void make_gnuplot_plot( const char out_fn_root[], const int length ) {
     "plot [length-15:length][-1.6:1.6] datafile index 1 using ($1+1):(log($6)) t \"CA\" w lp ls 1, '' index 1 using ($1+1):(log($7)) t \"CC\" w lp ls 2, '' index 1 using ($1+1):(log($8)) t \"CG\" w lp ls 3, '' index 1 using ($1+1):(log($9)) t \"CT\" w lp ls 4;",
 
     "set origin 0, 0.25;",
-    "plot [0:15][-1.6:1.6] datafile index 1 using ($1+1):(log($10)) t \"CA\" w lp ls 1, '' index 1 using ($1+1):(log($11)) t \"CC\" w lp ls 2, '' index 1 using ($1+1):(log($12)) t \"CG\" w lp ls 3, '' index 1 using ($1+1):(log($14)) t \"CT\" w lp ls 4;",
+    "plot [0:15][-1.6:1.6] datafile index 1 using ($1+1):(log($10)) t \"GA\" w lp ls 1, '' index 1 using ($1+1):(log($11)) t \"GC\" w lp ls 2, '' index 1 using ($1+1):(log($12)) t \"GG\" w lp ls 3, '' index 1 using ($1+1):(log($14)) t \"GT\" w lp ls 4;",
 
     "set origin 0.5, 0.25;",
-    "plot [length-15:length][-1.6:1.6] datafile index 1 using ($1+1):(log($10)) t \"CA\" w lp ls 1, '' index 1 using ($1+1):(log($11)) t \"CC\" w lp ls 2, '' index 1 using ($1+1):(log($12)) t \"CG\" w lp ls 3, '' index 1 using ($1+1):(log($13)) t \"CT\" w lp ls 4;",
+    "plot [length-15:length][-1.6:1.6] datafile index 1 using ($1+1):(log($10)) t \"GA\" w lp ls 1, '' index 1 using ($1+1):(log($11)) t \"GC\" w lp ls 2, '' index 1 using ($1+1):(log($12)) t \"GG\" w lp ls 3, '' index 1 using ($1+1):(log($13)) t \"GT\" w lp ls 4;",
 
     "set origin 0, 0;",
-    "plot [0:15][-1.6:1.6] datafile index 1 using ($1+1):(log($14)) t \"CA\" w lp ls 1, '' index 1 using ($1+1):(log($15)) t \"CC\" w lp ls 2, '' index 1 using ($1+1):(log($16)) t \"CG\" w lp ls 3, '' index 1 using ($1+1):(log($17)) t \"CT\" w lp ls 4;",
+    "plot [0:15][-1.6:1.6] datafile index 1 using ($1+1):(log($14)) t \"TA\" w lp ls 1, '' index 1 using ($1+1):(log($15)) t \"TC\" w lp ls 2, '' index 1 using ($1+1):(log($16)) t \"TG\" w lp ls 3, '' index 1 using ($1+1):(log($17)) t \"TT\" w lp ls 4;",
 
     "set origin 0.5, 0;",
-    "plot [length-15:length][-1.6:1.6] datafile index 1 using ($1+1):(log($14)) t \"CA\" w lp ls 1, '' index 1 using ($1+1):(log($15)) t \"CC\" w lp ls 2, '' index 1 using ($1+1):(log($16)) t \"CG\" w lp ls 3, '' index 1 using ($1+1):(log($17)) t \"CT\" w lp ls 4;",
+    "plot [length-15:length][-1.6:1.6] datafile index 1 using ($1+1):(log($14)) t \"TA\" w lp ls 1, '' index 1 using ($1+1):(log($15)) t \"TC\" w lp ls 2, '' index 1 using ($1+1):(log($16)) t \"TG\" w lp ls 3, '' index 1 using ($1+1):(log($17)) t \"TT\" w lp ls 4;",
 
   };
 
