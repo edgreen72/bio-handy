@@ -3,9 +3,12 @@ This repo contains random scripts for doing things that are occassionally useful
 
 ## MiSeqRunCheck.pl
 ```
-MiSeqRunCheck.pl -s <SampleSheet.csv> -d <DemultiplexSummaryF1L1.txt
+MiSeqRunCheck.pl -s <SampleSheet.csv> -d <DemultiplexSummaryF1L1.txt>
 Reports the IDs and counts of the most common indeces seen in a run
 and writes NA if the index was not listed in the SampleSheet.csv
+Useful for making sure the indeces listed in your SampleSheet.csv
+are the indeces that showed up in the run. And if not, tells you
+which ones did show up!
 ```
 
 ## align2consensus.pl
@@ -54,10 +57,12 @@ reads from a paired-end run. Reads must be in the same order.
 It takes the first -l bases of the forward and reverse reads and treats them as a
 composite barcode. It reports the number of read pairs with each observed barcode.
 For example, a read pair like this, using -l 5
-@M00160:20:000000000-ANYJ6:1:1101:10222:1120 1:N:0:8\nGATGAGGCTTAGAAGCAAGATCGGAAGAGCACACGTCTGAACTCCAGTCACTTGGTCAACATCGTTTGCCGTCTTC
+@M00160:20:000000000-ANYJ6:1:1101:10222:1120 1:N:0:8
+GATGAGGCTTAGAAGCAAGATCGGAAGAGCACACGTCTGAACTCCAGTCACTTGGTCAACATCGTTTGCCGTCTTC
 +
-CC@CCGGGEFFACFFFGC6,,CCCCC+6CE@<FFDCFFG9C@F9<@CFDAFCG<,;CAF,,;@,C,C,EF+CEF7C\n[other read]
-@M00160:20:000000000-ANYJ6:1:1101:10222:1120 2:N:0:8\nTGCTTCTAAGCCTAATCAGATCGGAAGAGCGTCGTGTAGNGAAAGANTNNAGNTNTCGNTNGGNGCCGTATCATTA
+CC@CCGGGEFFACFFFGC6,,CCCCC+6CE@<FFDCFFG9C@F9<@CFDAFCG<,;CAF,,;@,C,C,EF+CEF7C
+@M00160:20:000000000-ANYJ6:1:1101:10222:1120 2:N:0:8
+TGCTTCTAAGCCTAATCAGATCGGAAGAGCGTCGTGTAGNGAAAGANTNNAGNTNTCGNTNGGNGCCGTATCATTA
 +
 CCCCCGGGGG?8F,;CFFEDFF,@FGD8@D@F,66BCEC#6,CC@<#:##,,#6#::C#,#:,#:C,@C@,,<,,<
 Would be classified as GATGA.TGCTT
@@ -100,3 +105,37 @@ pss-bam.pl v 0.06 -f <fasta file> -b <bam file>
 Uses the Bio::DB::Sam module to make map-damage like data
 suitable for plotting in gnuplot.
 ```
+
+## fastq-dinuc-count
+```
+fastq-dinuc-count -f <fastq file(s)> -l <length>
+                  -e <write output files to this name>
+Makes a table of the observed dinucleotides in sequences
+of a defined length in a fastq file. Input file can be
+gzipped or not. It is ass-u-me'd that the fastq file
+contains sequences that are the result of some merging
+process, like SeqPrep. Thus, the fastq input contains
+full-length sequences of the top strand of each library
+insert that were put together by examination of the
+forward and reverse read.
+Output is of this format:
+Position AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT NN
+Position is the 0-indexed starting position of the dinucleotide.
+The NN column contains the count of all dinucleotides at the
+given position that cannot be counted in another category, i.e.,
+any dinucleotide composed of anything other that two
+A, C, G, or T bases.
+NOTES: -f option can be a colon delimited list of fastq filenames
+       If -e option is given, then a .dat and .eps filename are
+       made with this prefix. These files contain the data table (.dat)
+       and an Encapsulated Postscript File (.eps) with an image of
+       the results.
+
+gnuplot must be installed and in your path to use the -e option
+
+Use gv or similar to view the .eps output plot.
+
+To make:
+> make fastq-dinuc-count
+```
+
