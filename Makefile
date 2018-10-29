@@ -1,6 +1,6 @@
 CC=gcc
 #CFLAGS=-O2
-CFLAGS=-gdwarf-2 -g
+#CFLAGS=-gdwarf-2 -g
 
 
 fastq-io.o : fastq-io.h fastq-io.c
