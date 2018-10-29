@@ -118,8 +118,8 @@ int get_next_fq( FQ_Src* fq_source, FQ* fq_seq ) {
   }
 }
 
-/* Args: FQ_Src* fq_source - contains the filepointer to fastq file
-         FQ* fq_seq - data structure to put the fastq data for the next fastq seq
+/* Args: 
+         
    Returns: 0 - everything is copacetic
           non-zero if EOF or other problem
    Reads the next fastq sequence from a regular file handle

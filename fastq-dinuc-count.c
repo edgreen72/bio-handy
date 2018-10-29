@@ -85,6 +85,7 @@ int main ( int argc, char* argv[] ) {
     help();
   }
   while( fq_source != NULL ) {
+    fprintf( stderr, "Examining %s...\n", fq_source->fn );
     while( get_next_fq( fq_source, &fq_seq ) == 0 ) {
       if ( fq_seq.len == length ) {
 	update_DNA( DNA, &fq_seq );
