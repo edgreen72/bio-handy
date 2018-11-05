@@ -5,7 +5,7 @@
 #include <getopt.h>
 #include "fasta-genome-io.h"
 
-#define DEBUG (0)
+#define DEBUG (1)
 
 void help( void ) {
   printf( "test-fasta-genome -f <fasta file> -I <ID of sequence to find>\n" );
@@ -46,6 +46,9 @@ int main( int argc, char* argv[] ) {
 
   seq = get_next_fa( fa_src, genome );
   while( seq != NULL ) {
+    if ( DEBUG ) {
+      printf( "Saw %s length %lu\n", seq->id, seq->len );
+    }
     seq = get_next_fa( fa_src, genome );
   }
   close_fasta_src( fa_src );

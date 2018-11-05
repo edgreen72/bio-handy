@@ -138,7 +138,7 @@ int read_fasta( FILE* fafp, Seq* seq, char* seq_buffer ) {
     fprintf( stderr, "%s is truncated to %d\n", seq->id, MAX_SEQ_LEN );
   }
   /* Now, make space in seq for copying the sequence */
-  seq->seq = (char*)malloc(sizeof(char)*i);
+  seq->seq = (char*)malloc(sizeof(char)*(i+1));
   strcpy( seq->seq, seq_buffer );
   seq->len = i;
   return 0;
