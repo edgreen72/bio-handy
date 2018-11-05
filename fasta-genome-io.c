@@ -24,7 +24,7 @@ Fa_Src* init_fasta_src( const char fn[] ) {
   }
   fa_source = (Fa_Src*)malloc(sizeof( Fa_Src ));
   strcpy( fa_source->fn, fn );
-  fq_source->n = 0;
+  fa_source->n = 0;
   fa_source->seq_buffer = (char*)malloc(sizeof(char)*MAX_SEQ_LEN);
   fa_source->seq_buffer[0] = '\0';
   if ( is_gz( fn ) ) {
@@ -59,25 +59,37 @@ Fa_Src* init_fasta_src( const char fn[] ) {
 */
 Seq* get_next_fa( Fa_Src* fa_source, Genome* genome ) {
   Seq* seq;
+  int status;
   seq = (Seq*)malloc(sizeof(Seq));
   if ( fa_source->is_gz ) {
-    seq = gzread_fasta( fa_source->fagz, seq,
-			fa_source->seq_buffer );
+    status = gzread_fasta( fa_source->fagz, seq,
+			   fa_source->seq_buffer );
 
   }
   else {
-    seq = read_fasta( fa_source->fafp, seq,
-		      fa_source->seq_buffer );
+    status = read_fasta( fa_source->fafp, seq,
+			 fa_source->seq_buffer );
   }
-  if ( seq == NULL ) {
+  if ( status ) {
     free( seq );
+    seq = NULL;
   }
   else {
     fa_source->n++;
-    genome->seq[ genome->n_seq ] = seq;
+    genome->seqs[ genome->n_seqs ] = seq;
     genome->n_seqs++;
   }
   return seq;
+}
+
+int close_fasta_src( Fa_Src* fa_source ) {
+  if ( fa_source->is_gz ) {
+    gzclose( fa_source->fagz );
+  }
+  else {
+    fclose(fa_source->fafp);
+  }
+  return 0;
 }
 
 /* Args: FILE* fafp
@@ -115,7 +127,7 @@ int read_fasta( FILE* fafp, Seq* seq, char* seq_buffer ) {
       c = fgetc( fafp );
     }
     seq_buffer[i] = '\0';
-    ungetc(c, fp);
+    ungetc(c, fafp);
   }
   else {
     if ( c == EOF ) {
@@ -123,13 +135,13 @@ int read_fasta( FILE* fafp, Seq* seq, char* seq_buffer ) {
     }
   }
   if ( i == MAX_SEQ_LEN ) {
-    fprintf( stderr, "%s is truncated to %d\n", id, MAX_SEQ_LEN );
+    fprintf( stderr, "%s is truncated to %d\n", seq->id, MAX_SEQ_LEN );
   }
   /* Now, make space in seq for copying the sequence */
   seq->seq = (char*)malloc(sizeof(char)*i);
   strcpy( seq->seq, seq_buffer );
   seq->len = i;
-  return i;
+  return 0;
 }
 
 /* Args: gzFile gzfp
@@ -175,17 +187,17 @@ int gzread_fasta( gzFile gzfp, Seq* seq, char* seq_buffer ) {
     }
   }
   if ( i == MAX_SEQ_LEN ) {
-    fprintf( stderr, "%s is truncated to %d\n", id, MAX_SEQ_LEN );
+    fprintf( stderr, "%s is truncated to %d\n", seq->id, MAX_SEQ_LEN );
   }
   /* Now, make space in seq for copying the sequence */
   seq->seq = (char*)malloc(sizeof(char)*i);
   strcpy( seq->seq, seq_buffer );
   seq->len = i;
-  return i;
+  return 0;
 }
 
 Seq* find_seq( Genome* genome, const char id[] ) {
-  Seq* target;
+  Seq** target;
   strcpy( genome->dummy->id, id );
   target = bsearch( &genome->dummy, genome->seqs, genome->n_seqs,
 		    sizeof( Seq* ), chr_cmp );
@@ -193,14 +205,14 @@ Seq* find_seq( Genome* genome, const char id[] ) {
     return NULL;
   }
   else {
-    return target;
+    return *target;
   }
 }
 
 int chr_cmp( const void *v1, const void *v2 ) {
-  Seq* c1p = (Seq*) v1;
-  Seq* c2p = (Seq*) v2;
-  return strcmp( c1p->id, c2p->id );
+  Seq** c1p = (Seq**) v1;
+  Seq** c2p = (Seq**) v2;
+  return strcmp( (*c1p)->id, (*c2p)->id );
 }
 
 Genome* init_genome( void ) {
@@ -211,3 +223,16 @@ Genome* init_genome( void ) {
   genome->n_seqs = 0;
   return genome;
 }
+
+/** fileOpen **/
+FILE * fileOpen(const char *name, char access_mode[]) {
+  FILE * f;
+  f = fopen(name, access_mode);
+  if (f == NULL) {
+    fprintf( stderr, "%s\n", name);
+    perror("Cannot open file");
+    return NULL;
+  }
+  return f;
+}
+
