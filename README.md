@@ -1,5 +1,7 @@
 # bio-handy
-This repo contains random scripts for doing things that are occassionally useful in sequence and genome analysis.
+This repo contains random scripts for doing things that are occassionally
+useful in sequence and genome analysis.
+A short description can be had by running the programs without arguments.
 
 ## MiSeqRunCheck.pl
 ```
