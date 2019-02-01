@@ -151,6 +151,12 @@ while ( $feature = $iterator->next_seq ) {
 print( "### pss-bam.pl v $VERSION\n" );
 print( "### $opt_f\n" );
 print( "### $opt_b\n" );
+print( "### Format of table:\n" );
+print( "###   Counts of how often a read base and genome base were seen at\n" );
+print( "###   each position in the aligned reads.\n" ); 
+print( "###   First base is what was seen in the read.\n" );
+print( "###   Second base is what was in the genome at that position.\n" );
+print( "### POS AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT\n" );
 &output_beginning( '### Forward read substitution counts and base context',
 		   \@SUBS, $up_context_p );
 
