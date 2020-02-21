@@ -7,8 +7,8 @@
 
 #define DEBUG (0)
 #define NUM_SEQ (100000)
-#define ADAPT_LEN (40)
-#define VERSION (2)
+#define ADAPT_LEN (65)
+#define VERSION (3)
 
 void help( char* adapter_root ) {
   printf( "what-adapter VERSION %d\n", VERSION );
