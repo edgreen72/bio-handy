@@ -9,18 +9,52 @@
 #define NUM_SEQ (100000)
 #define L_DEF (167)
 
+typedef struct dinucs {
+  unsigned int dinuc_counts[17];
+} Dinucs;
+typedef struct dinucs* DNP;
+
+typedef struct dinuc_array {
+  DNP* dnps;
+  size_t len;
+} Dinuc_array;
+typedef struct dinuc_array* DiNucArray;
+
+DiNucArray init_DiNucArray( const int length );
+void update_DNA( DiNucArray DNA, const FQ* fq_seq_p );
+size_t get_dinuc_inx( const char* dinuc );
+void write_DNA( const DiNucArray DNA, const int length );
+
+
 void help( void ) {
   printf( "what-adapter\n" );
   printf( "-f <fastq input file>\n" );
-  printf( "-n <NUM_SEQ; default = %d>\n", NUM_SEQ );
-  printf( "-r <ADAPT_ROOT; default = %s>\n", ADAPT_ROOT );
-  printf( "-V verbose mode; tell me a bunch of other stuff\n" );
-
+  printf( "-n <NUM_SEQ; default = 
+  printf( "Report the most common adapter sequence seen in an input\n" );
+  printf( "fastq file. The file may be gzipped or not.\n" );
+  printf( "This program works by examining the first NUM_SEQ fastq\n" );
+  printf( "records for the presence of the ADAPT_ROOT sequence.\n" );
+  printf( "It then reports the most common full adapter sequence,\n" );
+  printf( "i.e., the ADAPT_ROOT sequence and the most common sequence\n" );
+  printf( "that follows it.\n" );
+  printf( "This program is especially useful for situations where you\n" );
+  printf( "have a short insert library and many reads have partial or\n" );
+  printf( "adapter sequence.\n" );
+  printf( "Makes a table of the observed dinucleotides in sequences\n" );
+  printf( "of a defined length in a fastq file. Input file can be\n" );
+  printf( "gzipped or not.\n" );
+  printf( "Output is of this format:\n" );
+  printf( "Position AA AC AG AT CA CC CG CT GA GC GG GT TA TC TG TT NN\n" );
+  printf( "Position is the 0-indexed starting position of the dinucleotide.\n" );
+  printf( "The NN column contains the count of all dinucleotides at the\n" );
+  printf( "given position that cannot be counted in another category, i.e.,\n" );
+  printf( "any dinucleotide composed of anything other that two\n" );
+  printf( "A, C, G, or T bases.\n" );
+  exit( 0 );
 }
 
 int main ( int argc, char* argv[] ) {
   extern char* optarg;
-  char ADAPT_ROOT[] = "AGATCGGAAGAGC"
   char fq_in[MAX_FN_LEN+1] = {'\0'};
   //  char fq_fn[MAX_FN_LEN+1] = {'\0'};
   char* fq_fn;
