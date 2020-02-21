@@ -8,9 +8,10 @@
 #define DEBUG (0)
 #define NUM_SEQ (100000)
 #define ADAPT_LEN (40)
+#define VERSION (2)
 
 void help( char* adapter_root ) {
-  printf( "what-adapter\n" );
+  printf( "what-adapter VERSION %d\n", VERSION );
   printf( "-f <fastq input file>\n" );
   printf( "-n <number of fastq sequences to examine; default = %d>\n", NUM_SEQ );
   printf( "-r <adapter root; default = %s>\n", adapter_root );
@@ -46,7 +47,7 @@ int main ( int argc, char* argv[] ) {
   num_seq      = NUM_SEQ;
   adapt_len    = ADAPT_LEN;
   adapter_root = (char*)malloc(sizeof(char) * MAX_FQ_LEN);
-  strcpy( adapter_root, "AGATCGGAAGAGCG" );
+  strcpy( adapter_root, "AGATCGGAAGAGC" );
   verbose = 0;
 
   /* Process input arguments */
