@@ -1,5 +1,5 @@
-CC=gcc
-#CFLAGS=-O2
+#CC=gcc
+CFLAGS=-O2
 #CFLAGS=-gdwarf-2 -g
 
 fasta-genome-io.o : fasta-genome-io.h fasta-genome-io.c
@@ -18,3 +18,6 @@ fastq-dinuc-count : fastq-dinuc-count.c fastq-io.o
 	echo "Making fastq-dinuc-count..."
 	$(CC) $(CFLAGS) fastq-io.o fastq-dinuc-count.c -lz -o fastq-dinuc-count 
 
+what-adapter : what-adapter.c fastq-io.o
+	echo "Making what-adapter..."
+	$(CC) $(CFLAGS) fastq-io.o what-adapter.c -lz -o what-adapter
