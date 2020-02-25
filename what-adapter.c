@@ -8,7 +8,7 @@
 #define DEBUG (0)
 #define NUM_SEQ (100000)
 #define ADAPT_LEN (65)
-#define VERSION (3)
+#define VERSION (4)
 
 void help( char* adapter_root ) {
   printf( "what-adapter VERSION %d\n", VERSION );
@@ -41,7 +41,10 @@ int main ( int argc, char* argv[] ) {
   FQ_Src* fq_source;
   FQ fq_seq;
   int ich;
-  int verbose;
+  int verbose       = 0;
+  int num_seen      = 0;
+  int num_seen_root = 0;
+  int input_set     = 0;
   
   /* Set up defaults */
   num_seq      = NUM_SEQ;
@@ -55,6 +58,7 @@ int main ( int argc, char* argv[] ) {
     switch(ich) {
     case 'f' :
       strcpy( fq_in, optarg );
+      input_set = 1;
       break;
     case 'n' :
       num_seq = atoi( optarg );
@@ -73,17 +77,35 @@ int main ( int argc, char* argv[] ) {
     }
   }
 
+  /* Initialize */
+  if ( !input_set ) {
+    fprintf( stderr, "No input fastq file specified\n" );
+    help(adapter_root);
+  }
   fq_source = init_fastq_src( fq_in );
   if ( fq_source == NULL ) {
     help(adapter_root);
   }
-  while( get_next_fq( fq_source, &fq_seq ) == 0 ) {
+  num_seen = 0;
+  
+  while( (get_next_fq( fq_source, &fq_seq ) == 0) &&
+	 (num_seen < num_seq) ) {
+    num_seen++;
     adapter = strstr( fq_seq.seq, adapter_root );
     if ( adapter != NULL ) {
+      num_seen_root++;
       adapter[adapt_len] = '\0';
       printf( "%s\n", adapter );
     }
   }
+
+  if ( verbose ) {
+    fprintf( stderr,
+	     "%d examined\n%d (%.3f) had adapter root\n",
+	     num_seen, num_seen_root,
+	     (float)num_seen_root / (float)num_seen );
+  }
+  
   exit( 0 );
 }
 
