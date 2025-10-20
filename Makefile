@@ -1,10 +1,14 @@
 #CC=gcc
-CFLAGS=-O2
-#CFLAGS=-gdwarf-2 -g
+#CFLAGS=-O2
+CFLAGS=-gdwarf-2 -g
 
 fasta-genome-io.o : fasta-genome-io.h fasta-genome-io.c
 	echo "Making fasta-genome-io.o..."
 	$(CC) $(CFLAGS) fasta-genome-io.c -c -lz -o fasta-genome-io.o
+
+kmer.o : kmer.h kmer.c
+	echo "Making kmer.o..."
+	$(CC) $(CFLAGS) kmer.c -c -o kmer.o
 
 test-fasta-genome : test-fasta-genome.c fasta-genome-io.o
 	echo "Making test-fasta-genome..."
@@ -17,6 +21,10 @@ fastq-io.o : fastq-io.h fastq-io.c
 fastq-dinuc-count : fastq-dinuc-count.c fastq-io.o
 	echo "Making fastq-dinuc-count..."
 	$(CC) $(CFLAGS) fastq-io.o fastq-dinuc-count.c -lz -o fastq-dinuc-count 
+
+astrea-complexity : astrea-complexity.c kmer.o fastq-io.o
+	echo "Making astrea-complexity..."
+	$(CC) $(CFLAGS) fastq-io.o kmer.o astrea-complexity.c -lz -o astrea-complexity
 
 what-adapter : what-adapter.c fastq-io.o
 	echo "Making what-adapter..."
