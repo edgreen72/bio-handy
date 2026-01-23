@@ -24,7 +24,8 @@ typedef struct kmer_array {
  */
 typedef struct kmer_array_array {
   unsigned int k;
-  unsigned int kaa_size;
+  unsigned int kaa_size; // length of KA** kaa
+  unsigned int n_entries; // how many seqs in KA** kaa
   KA** kaa;
 } KHA;
 

@@ -60,6 +60,7 @@ int add_seq_to_KHA( KHA* kha, FQ* fq ) {
     kha->kaa[fq->len] = init_kmer_array( kha->k );
   }
   kha->kaa[fq->len]->k_array[full_inx]++;
+  kha->n_entries++;
   return 1;
 }
 
@@ -81,9 +82,10 @@ KA* init_kmer_array( const unsigned int k ) {
 KHA* init_KHA( const unsigned int k ) {
   size_t i;
   KHA* kha;
-  kha = (KHA*)malloc(sizeof(KHA));
-  kha->k = k;
-  kha->kaa_size = MAX_SEQ_LEN;
+  kha            = (KHA*)malloc(sizeof(KHA));
+  kha->k         = k;
+  kha->kaa_size  = MAX_SEQ_LEN;
+  kha->n_entries = 0;
   kha->kaa = (KA**)malloc(sizeof(KA*) * (MAX_SEQ_LEN+1));
   for( i = 0; i <= MAX_SEQ_LEN; i++ ) {
     kha->kaa[i] = NULL;
@@ -98,6 +100,7 @@ void output_kmer_table( KHA* kha ) {
   size_t len_i;
   size_t kmer_i;
   unsigned int i;
+  unsigned int t_uniq = 0; // total number of uniq seq
   unsigned int array_size;
   unsigned int count[MAX_SEQ_COUNT + 1];
   /* Zero out the count array that will be printed */
@@ -120,6 +123,12 @@ void output_kmer_table( KHA* kha ) {
     }
   }
   for( i = 1; i <= MAX_SEQ_COUNT; i++ ) {
-    printf( "%u %u\n", i, count[i] );
+    t_uniq += count[i];
+  }
+  printf( "# Total unique sequences: %u\n", t_uniq );
+  
+  for( i = 1; i <= MAX_SEQ_COUNT; i++ ) {
+    printf( "%u\t%u\t%.5f\n", i, count[i],
+	    ((double)i*(double)count[i])/(double)kha->n_entries );
   }
 }

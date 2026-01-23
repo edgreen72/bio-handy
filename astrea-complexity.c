@@ -78,8 +78,8 @@ int main ( int argc, char* argv[] ) {
 void help( void ) {
   printf("astrea-complexity V %d\n", VERSION );
   printf("    -f <fastq file>\n" );
-  printf("    -k <kmer length; default = %d", DEF_KMER_LEN);
-  printf("    -m <max sequences to examine; def = %d\n",
+  printf("    -k <kmer length; default = %d\n", DEF_KMER_LEN);
+  printf("    -m <max sequences to examine; default = %d\n",
 	 MAX_TO_READ );
   printf("Makes a histogram of how many sequences are seen\n" );
   printf("each specific number of times.\n" );

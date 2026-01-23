@@ -1,3 +1,6 @@
+#ifndef FASTQ_IO
+#define FASTQ_IO
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -44,3 +47,5 @@ FQ_Src* reset_fastq_src( const char fn[], FQ_Src* fq_source );
 int read_fastq( FILE* fp, FQ* fq_seq );
 int gzread_fastq( gzFile gzfp, FQ* fq_seq );
 FILE* fileOpen(const char* name, char access_mode[]);
+
+#endif
