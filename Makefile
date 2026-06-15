@@ -29,3 +29,8 @@ astrea-complexity : astrea-complexity.c kmer.o fastq-io.o
 what-adapter : what-adapter.c fastq-io.o
 	echo "Making what-adapter..."
 	$(CC) $(CFLAGS) fastq-io.o what-adapter.c -lz -o what-adapter
+
+sab : sab-v1.c
+	echo "Making sab..."
+	$(CC) $(CFLAGS) -o sab sab-v1.c -lhts -lz -lm -lpthread
+
